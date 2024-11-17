@@ -1,0 +1,300 @@
+openapi: 3.0.0
+info:
+  title: Lively 35th USPS API
+  version: 1.0.0
+  description: API documentation for USPS Label, Token, and Price services
+servers:
+  - url: https://api.lively35th.com
+paths:
+  /token:
+    post:
+      summary: Obtain a USPS API Token
+      description: Generates an access token using CLIENT_ID and CLIENT_SECRET.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                CLIENT_ID:
+                  type: string
+                  description: The client ID for authentication.
+                CLIENT_SECRET:
+                  type: string
+                  description: The client secret for authentication.
+              required:
+                - CLIENT_ID
+                - CLIENT_SECRET
+      responses:
+        "200":
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: The generated access token.
+        "400":
+          description: Missing CLIENT_ID or CLIENT_SECRET
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: CLIENT_ID and CLIENT_SECRET are required
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /label:
+    post:
+      summary: Create a USPS Label
+      description: Generates a shipping label based on provided information and verifies the token.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                toAddress:
+                  type: object
+                  properties:
+                    firstName:
+                      type: string
+                      description: Recipient's first name.
+                    lastName:
+                      type: string
+                      description: Recipient's last name.
+                    streetAddress:
+                      type: string
+                      description: Recipient's street address.
+                    secondaryAddress:
+                      type: string
+                      description: Additional address information, if any.
+                    city:
+                      type: string
+                      description: Recipient's city.
+                    state:
+                      type: string
+                      description: Recipient's state.
+                    ZIPCode:
+                      type: string
+                      description: Destination ZIP code.
+                    ZIPPlus4:
+                      type: string
+                      description: The ZIP+4 code, if available.
+                packageDescription:
+                  type: object
+                  properties:
+                    mailClass:
+                      type: string
+                      enum: [PRIORITY_MAIL, USPS_GROUND_ADVANTAGE]
+                      description: Type of mail service used.
+                    weight:
+                      type: number
+                      description: Weight of the package.
+                    length:
+                      type: number
+                      description: Length of the package.
+                    height:
+                      type: number
+                      description: Height of the package.
+                    width:
+                      type: number
+                      description: Width of the package.
+                    mailingDate:
+                      type: string
+                      format: date
+                      description: The date the package will be mailed.
+                skus:
+                  type: array
+                  items:
+                    type: string
+                    description: List of SKUs for the package.
+      responses:
+        "200":
+          description: USPS label created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientID:
+                    type: string
+                    description: The client ID that requested the label.
+                  labelAddress:
+                    type: string
+                    description: The address for the label.
+                  trackingNumber:
+                    type: string
+                    description: The tracking number assigned to the package.
+                  weight:
+                    type: number
+                    description: The weight of the package.
+                  postage:
+                    type: number
+                    description: Postage amount for the package.
+                  extraServices:
+                    type: array
+                    items:
+                      type: string
+                    description: List of additional services included.
+                  balance:
+                    type: number
+                    description: Updated balance after postage cost deduction.
+                  label:
+                    type: string
+                    format: binary
+                    description: The generated PDF shipping label.
+        "400":
+          description: Insufficient balance or invalid input.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "401":
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthorized or testing account cannot be used for production
+        "429":
+          description: Too many concurrent requests.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Too many concurrent requests, please try again later.
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /price:
+    post:
+      summary: Get USPS Shipping Price
+      description: Calculates the shipping price based on provided package details and verifies the token.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                toAddress:
+                  type: object
+                  properties:
+                    ZIPCode:
+                      type: string
+                      description: Destination ZIP code.
+                packageDescription:
+                  type: object
+                  properties:
+                    weight:
+                      type: number
+                      description: Weight of the package.
+                    length:
+                      type: number
+                      description: Length of the package.
+                    width:
+                      type: number
+                      description: Width of the package.
+                    height:
+                      type: number
+                      description: Height of the package.
+                    mailClass:
+                      type: string
+                      enum: [PRIORITY_MAIL, USPS_GROUND_ADVANTAGE]
+                      description: Type of mail service used.
+      responses:
+        "200":
+          description: Shipping price calculated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalBasePrice:
+                    type: number
+                    description: The calculated base price for the shipment.
+                  weight:
+                    type: number
+                    description: The weight of the package.
+                  dimWeight:
+                    type: number
+                    description: The dimensional weight of the package.
+                  startDate:
+                    type: string
+                    format: date
+                    description: Start date for the shipping rate.
+                  endDate:
+                    type: string
+                    format: date
+                    description: End date for the shipping rate.
+                  mailClass:
+                    type: string
+                    description: The mail class used for shipping.
+        "400":
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "401":
+          description: Unauthorized request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthorized request
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+securitySchemes:
+  bearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT

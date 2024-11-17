@@ -1,0 +1,11 @@
+{
+  "name": "four-tune",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build necessary'"
+  },
+
+  "dependencies": {
+    "swagger-ui-dist": "^5.18.2"
+  }
+}

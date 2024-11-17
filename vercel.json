@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/swagger.yaml",
+      "destination": "/swagger.yaml"
+    }
+  ],
+  "cleanUrls": true
+}
